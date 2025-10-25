@@ -8,7 +8,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Arcade Bite — Top‑Down Shooter</title>
+  <title>Arcade Bite — Top-Down Shooter</title>
   <style>
     /* === Styles: clean, minimal HUD and layout === */
     html,body{height:100%;margin:0;background:#111;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;color:#eee}
@@ -52,7 +52,7 @@
 
     <div class="panel">
       <h3>Controls</h3>
-      <div class="small">WASD to move • Mouse to aim • Left click to shoot • Hold to autofire • <strong>S</strong> to open shop • P to pause</div>
+      <div class="small">W A D to move • Down Arrow (↓) to move down • Mouse to aim • Left click to shoot • Hold to autofire • <strong>S</strong> to open shop • P to pause</div>
       <h3 style="margin-top:12px">Stats</h3>
       <div class="small">Damage: <span id="statDamage">1</span> • Fire Rate: <span id="statFR">3</span>/s • Speed: <span id="statSpeed">3.0</span></div>
       <button id="btnShop">Open Shop (S)</button>
@@ -153,8 +153,36 @@
       });
       canvas.addEventListener('mousedown',e=>{mouse.down=true; audioCtx.resume();});
       window.addEventListener('mouseup',e=>mouse.down=false);
-      window.addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true; if(e.key==='s' || e.key==='S'){toggleShop()} if(e.key==='p' || e.key==='P'){paused=!paused;}});
-      window.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});
+
+      // === Key handling: S opens shop, Down Arrow moves down ===
+      window.addEventListener('keydown',e=>{
+        const k = (e.key || '').toLowerCase();
+
+        // S key toggles the shop (do not register 's' as movement anymore)
+        if(k === 's'){
+          toggleShop();
+          return;
+        }
+
+        // Pause
+        if(k === 'p'){
+          paused = !paused;
+          return;
+        }
+
+        // Movement keys we track in `keys`
+        // Note: down movement is now ArrowDown (key 'arrowdown')
+        if(['w','a','d','arrowdown','arrowleft','arrowright','arrowup'].includes(k)){
+          keys[k] = true;
+        }
+      });
+
+      window.addEventListener('keyup',e=>{
+        const k = (e.key || '').toLowerCase();
+        if(['w','a','d','arrowdown','arrowleft','arrowright','arrowup'].includes(k)){
+          keys[k] = false;
+        }
+      });
 
       // Shop UI
       const shop = document.getElementById('shop');
@@ -239,7 +267,11 @@
         if(paused) return;
         // player input
         let dx=0,dy=0;
-        if(keys['w']) dy -= 1; if(keys['s']) dy += 1; if(keys['a']) dx -= 1; if(keys['d']) dx += 1;
+        if(keys['w']) dy -= 1;
+        // 's' no longer used for movement — down movement now uses ArrowDown
+        if(keys['arrowdown']) dy += 1;
+        if(keys['a']) dx -= 1;
+        if(keys['d']) dx += 1;
         const len = Math.hypot(dx,dy) || 1;
         player.x += (dx/len) * player.speed * dt * 60;
         player.y += (dy/len) * player.speed * dt * 60;
@@ -427,3 +459,4 @@
   </script>
 </body>
 </html>
+
