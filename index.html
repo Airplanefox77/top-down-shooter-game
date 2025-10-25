@@ -1,8 +1,218 @@
-<!-- === Arcade Bite — Full <script> (Shop = O, Movement = WASD) ===
-     Copy & paste this entire <script> block to replace your existing one.
-     I preserved all referenced DOM IDs and behaviors; only keybindings changed.
-     Hewwo :3 🎮
+🎃モスマン🦇
+sakura_kitsu
+🧡 私は彼女を愛している
+
+Kit
+APP
+ — 6/18/25, 3:46 AM
+e
+hey~
+Kit
+APP
+ — 8/14/25, 12:26 PM
+⚠️ You have been warned
+Reason
+yes
+Total Full Warns
+1
+⚠️ You have been warned
+Reason
+d
+Total Full Warns
+1
+Kit
+APP
+ — 10/23/25, 8:00 PM
+gooner
+🎃モスマン🦇
+
+ — 2:30 PM
+<!-- === Top-Down Shooter (single-file) ===
+     Save this as: topdown_shooter.html
+     Open in any modern browser. Have fun! Hewwo :3 🎮
 -->
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Arcade Bite — Top‑Down Shooter</title>
+  <style>
+    /* === Styles: clean, minimal HUD and layout === */
+    html,body{height:100%;margin:0;background:#111;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;color:#eee}
+    #gameWrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+    canvas{background:linear-gradient(#0b0b0f,#07111a);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.6);}
+
+    /* HUD overlay */
+    .hud{position:absolute;left:20px;top:20px;color:#fff;font-weight:600;text-shadow:0 2px 6px rgba(0,0,0,.7)}
+    .hud .row{margin-bottom:8px}
+    .money{font-size:18px}
+    .wave{font-size:14px;opacity:.9}
+
+    /* Right-side panel */
+    .panel{position:absolute;right:20px;top:20px;width:260px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));border:1px solid rgba(255,255,255,.04);padding:12px;border-radius:10px}
+    .panel h3{margin:0 0 8px 0;font-size:15px}
+    .panel button{display:block;width:100%;padding:8px;margin:6px 0;border-radius:8px;border:0;background:#1c1f2a;color:#fff;cursor:pointer;font-weight:700}
+    .panel .small{font-size:12px;opacity:.9}
+
+    /* Shop overlay */
+    #shop{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#0f1318;border-radius:12px;padding:18px;border:1px solid rgba(255,255,255,.04);width:520px;max-width:96%;display:none;z-index:20}
+    #shop h2{margin:0 0 10px;color:#ffd15a}
+    .upgrade{display:flex;align-items:center;justify-content:space-between;padding:8px;border-radius:8px;margin:6px 0;background:linear-gradient(90deg,rgba(255,255,255,.015),transparent)}
+    .upgrade .meta{max-width:68%}
+    .upgrade button{padding:8px 12px;border-radius:8px;border:0;background:#2a6eff;color:#fff;cursor:pointer}
+
+    #footerTips{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;color:#bbb;font-size:13px}
+
+    /* small screen tweaks */
+    @media (max-width:640px){.panel{display:none}} 
+  </style>
+</head>
+<body>
+  <div id="gameWrap">
+    <canvas id="c" width="1000" height="700"></canvas>
+
+    <div class="hud" id="hudLeft">
+      <div class="row money">💰 <span id="money">0</span></div>
+      <div class="row wave">Wave: <span id="wave">0</span> &nbsp; | &nbsp; Kills: <span id="kills">0</span></div>
+      <div class="row">❤ <span id="hp">100</span> / <span id="maxHp">100</span></div>
+    </div>
+
+    <div class="panel">
+      <h3>Controls</h3>
+      <div class="small">WASD to move • Mouse to aim • Left click to shoot • Hold to autofire • <strong>S</strong> to open shop • P to pause</div>
+      <h3 style="margin-top:12px">Stats</h3>
+      <div class="small">Damage: <span id="statDamage">1</span> • Fire Rate: <span id="statFR">3</span>/s • Speed: <span id="statSpeed">3.0</span></div>
+      <button id="btnShop">Open Shop (S)</button>
+      <button id="btnRestart" style="background:#ff6b6b;margin-top:8px">Restart Game</button>
+    </div>
+
+  </div>
+
+  <div id="shop">
+    <h2>Upgrade Shop ✨</h2>
+    <div class="upgrade"><div class="meta"><strong>Damage</strong><div class="small">Increase bullet damage (+1)</div></div><div><button data-action="buy" data-type="damage">Buy — <span class="cost">50</span></button></div></div>
+    <div class="upgrade"><div class="meta"><strong>Fire Rate</strong><div class="small">Shoot more bullets per second (+0.5/s)</div></div><div><button data-action="buy" data-type="firerate">Buy — <span class="cost">60</span></button></div></div>
+    <div class="upgrade"><div class="meta"><strong>Speed</strong><div class="small">Move faster (+0.4)</div></div><div><button data-action="buy" data-type="speed">Buy — <span class="cost">70</span></button></div></div>
+    <div class="upgrade"><div class="meta"><strong>Max HP</strong><div class="small">Increase max HP (+15)</div></div><div><button data-action="buy" data-type="maxhp">Buy — <span class="cost">80</span></button></div></div>
+    <div class="upgrade"><div class="meta"><strong>Bullet Speed</strong><div class="small">Bullets travel faster (+1)</div></div><div><button data-action="buy" data-type="bulletspeed">Buy — <span class="cost">40</span></button></div></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button id="closeShop" style="flex:1;background:#6bffb1;color:#000;font-weight:800">Close</button>
+      <button id="upgradeAll" style="flex:1;background:#ffd15a;color:#000;font-weight:800">Auto-Select (Best Value)</button>
+    </div>
+  </div>
+
+  <div id="footerTips">Tip: Survive waves to earn more money — defeat big enemies for huge payouts! 🌟</div>
+
+  <script>
+    // === JavaScript Game: Arcade Bite ===
+    (()=>{
+      // Helpers
+      const rand = (a,b)=>Math.random()*(b-a)+a;
+      const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+
+      // Canvas & context
+      const canvas = document.getElementById('c');
+      const ctx = canvas.getContext('2d');
+      function resize(){
+        const scale = Math.min(window.innerWidth-40,1200);
+        canvas.width = Math.min(1200, window.innerWidth - 40);
+        canvas.height = Math.min(800, window.innerHeight - 120);
+      }
+      window.addEventListener('resize',resize); resize();
+
+      // Game state
+      let running = true;
+      let paused = false;
+      let lastTime = 0;
+      let mouse = {x:canvas.width/2,y:canvas.height/2,down:false};
+... (330 lines left)
+Collapse
+message.txt
+20 KB
+﻿
+Kit
+APP
+Kit
+#0202
+<!-- === Top-Down Shooter (single-file) ===
+     Save this as: topdown_shooter.html
+     Open in any modern browser. Have fun! Hewwo :3 🎮
+-->
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Arcade Bite — Top‑Down Shooter</title>
+  <style>
+    /* === Styles: clean, minimal HUD and layout === */
+    html,body{height:100%;margin:0;background:#111;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;color:#eee}
+    #gameWrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+    canvas{background:linear-gradient(#0b0b0f,#07111a);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.6);}
+
+    /* HUD overlay */
+    .hud{position:absolute;left:20px;top:20px;color:#fff;font-weight:600;text-shadow:0 2px 6px rgba(0,0,0,.7)}
+    .hud .row{margin-bottom:8px}
+    .money{font-size:18px}
+    .wave{font-size:14px;opacity:.9}
+
+    /* Right-side panel */
+    .panel{position:absolute;right:20px;top:20px;width:260px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));border:1px solid rgba(255,255,255,.04);padding:12px;border-radius:10px}
+    .panel h3{margin:0 0 8px 0;font-size:15px}
+    .panel button{display:block;width:100%;padding:8px;margin:6px 0;border-radius:8px;border:0;background:#1c1f2a;color:#fff;cursor:pointer;font-weight:700}
+    .panel .small{font-size:12px;opacity:.9}
+
+    /* Shop overlay */
+    #shop{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#0f1318;border-radius:12px;padding:18px;border:1px solid rgba(255,255,255,.04);width:520px;max-width:96%;display:none;z-index:20}
+    #shop h2{margin:0 0 10px;color:#ffd15a}
+    .upgrade{display:flex;align-items:center;justify-content:space-between;padding:8px;border-radius:8px;margin:6px 0;background:linear-gradient(90deg,rgba(255,255,255,.015),transparent)}
+    .upgrade .meta{max-width:68%}
+    .upgrade button{padding:8px 12px;border-radius:8px;border:0;background:#2a6eff;color:#fff;cursor:pointer}
+
+    #footerTips{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;color:#bbb;font-size:13px}
+
+    /* small screen tweaks */
+    @media (max-width:640px){.panel{display:none}} 
+  </style>
+</head>
+<body>
+  <div id="gameWrap">
+    <canvas id="c" width="1000" height="700"></canvas>
+
+    <div class="hud" id="hudLeft">
+      <div class="row money">💰 <span id="money">0</span></div>
+      <div class="row wave">Wave: <span id="wave">0</span> &nbsp; | &nbsp; Kills: <span id="kills">0</span></div>
+      <div class="row">❤ <span id="hp">100</span> / <span id="maxHp">100</span></div>
+    </div>
+
+    <div class="panel">
+      <h3>Controls</h3>
+      <div class="small">WASD to move • Mouse to aim • Left click to shoot • Hold to autofire • <strong>S</strong> to open shop • P to pause</div>
+      <h3 style="margin-top:12px">Stats</h3>
+      <div class="small">Damage: <span id="statDamage">1</span> • Fire Rate: <span id="statFR">3</span>/s • Speed: <span id="statSpeed">3.0</span></div>
+      <button id="btnShop">Open Shop (S)</button>
+      <button id="btnRestart" style="background:#ff6b6b;margin-top:8px">Restart Game</button>
+    </div>
+
+  </div>
+
+  <div id="shop">
+    <h2>Upgrade Shop ✨</h2>
+    <div class="upgrade"><div class="meta"><strong>Damage</strong><div class="small">Increase bullet damage (+1)</div></div><div><button data-action="buy" data-type="damage">Buy — <span class="cost">50</span></button></div></div>
+    <div class="upgrade"><div class="meta"><strong>Fire Rate</strong><div class="small">Shoot more bullets per second (+0.5/s)</div></div><div><button data-action="buy" data-type="firerate">Buy — <span class="cost">60</span></button></div></div>
+    <div class="upgrade"><div class="meta"><strong>Speed</strong><div class="small">Move faster (+0.4)</div></div><div><button data-action="buy" data-type="speed">Buy — <span class="cost">70</span></button></div></div>
+    <div class="upgrade"><div class="meta"><strong>Max HP</strong><div class="small">Increase max HP (+15)</div></div><div><button data-action="buy" data-type="maxhp">Buy — <span class="cost">80</span></button></div></div>
+    <div class="upgrade"><div class="meta"><strong>Bullet Speed</strong><div class="small">Bullets travel faster (+1)</div></div><div><button data-action="buy" data-type="bulletspeed">Buy — <span class="cost">40</span></button></div></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button id="closeShop" style="flex:1;background:#6bffb1;color:#000;font-weight:800">Close</button>
+      <button id="upgradeAll" style="flex:1;background:#ffd15a;color:#000;font-weight:800">Auto-Select (Best Value)</button>
+    </div>
+  </div>
+
+  <div id="footerTips">Tip: Survive waves to earn more money — defeat big enemies for huge payouts! 🌟</div>
 
 <script>
   // === Utilities & Setup ===
@@ -475,3 +685,5 @@
     console.log('Arcade Bite script initialized — Shop = O. Move with WASD. Hewwo :3');
   })();
 </script>
+</body>
+</html>
